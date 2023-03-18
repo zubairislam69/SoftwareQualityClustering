@@ -1,56 +1,79 @@
 import java.io.File;
-
 import net.sf.javaml.clustering.Clusterer;
 import net.sf.javaml.clustering.KMeans;
 import net.sf.javaml.clustering.evaluation.SumOfSquaredErrors;
 import net.sf.javaml.core.Dataset;
 import net.sf.javaml.core.Instance;
+import net.sf.javaml.distance.DistanceMeasure;
 import net.sf.javaml.tools.data.FileHandler;
 import net.sf.javaml.clustering.evaluation.ClusterEvaluation;
 import net.sf.javaml.clustering.FarthestFirst;
-import net.sf.javaml.clustering.evaluation.TraceScatterMatrix;
-import net.sf.javaml.clustering.evaluation.SumOfAveragePairwiseSimilarities;
 import net.sf.javaml.clustering.KMedoids;
+import net.sf.javaml.clustering.evaluation.AICScore;
+import net.sf.javaml.clustering.evaluation.Gamma;
+import net.sf.javaml.clustering.evaluation.CIndex;
+import net.sf.javaml.distance.EuclideanDistance;
 
 public class Clusters {
 
     public static void main(String[] args) throws Exception {
+
         // Load the iris dataset
         Dataset data = FileHandler.loadDataset(new File("C:src/main/resources/iris.data"), 4, ",");
 
-        // Create a KMeans clusterer with k=3 clusters
+        //creates a KMeans cluster with 4 clusters
         Clusterer km = new KMeans();
 
+        //creates a FarthestFirst cluster with 4 clusters
         Clusterer FarthestFirst = new FarthestFirst();
 
+        //creates a KMedoids cluster with 4 clusters
         Clusterer KMedoids = new KMedoids();
 
-
-        //cluster the data using KMean and append to array
+        //cluster the data using KMean
         Dataset[] kmClusters = km.cluster(data);
         System.out.println("KMeans Clusters:");
-        printClusters(kmClusters);
-        evaluateClusterer(km, data, kmClusters);
+
+        //call output function to show all clusters
+        outputClusters(kmClusters);
+
+        //evaluate the scores for each cluster
+        evaluateClustererScores(kmClusters);
         System.out.println("----------------------------------------------");
 
-        // Cluster the dataset using the AQBC algorithm
+        // Cluster the dataset using the FarthestFirst algorithm
         Dataset[] FarthestFirstClusters = FarthestFirst.cluster(data);
         System.out.println("FarthestFirst Clusters:");
-        printClusters(FarthestFirstClusters);
-        evaluateClusterer(FarthestFirst, data, FarthestFirstClusters);
+
+        //call output function to show all clusters
+        outputClusters(FarthestFirstClusters);
+
+        //evaluate the scores for each cluster
+        evaluateClustererScores(FarthestFirstClusters);
         System.out.println("----------------------------------------------");
 
-        // Cluster the dataset using the DBSCAN algorithm
+        // Cluster the dataset using the KMediods algorithm
         Dataset[] KMedoidsClusters = KMedoids.cluster(data);
         System.out.println("KMedoids Clusters:");
-        printClusters(KMedoidsClusters);
-        evaluateClusterer(KMedoids, data, KMedoidsClusters);
+
+        //call output function to show all clusters
+        outputClusters(KMedoidsClusters);
+
+        //evaluate the scores for each cluster
+        evaluateClustererScores(KMedoidsClusters);
         System.out.println("----------------------------------------------");
     }
 
-    private static void printClusters(Dataset[] clusters) {
+    //function to output the clusters inside the dataset
+    private static void outputClusters(Dataset[] clusters) {
+
+        //for the length of the dataset
         for (int i = 0; i < clusters.length; i++) {
+
+            //print out each cluster heading
             System.out.println("Cluster " + i + ":");
+
+            //print out each cluster value
             for (Instance instance : clusters[i]) {
                 System.out.println(instance);
             }
@@ -58,18 +81,35 @@ public class Clusters {
         }
     }
 
-    private static void evaluateClusterer(Clusterer clusterer, Dataset data, Dataset[] clusters) {
+    //function to evaluate the clusters scores inside the dataset
+    private static void evaluateClustererScores(Dataset[] clusters) {
+
+        //creates instance of EuclideanDistance
+        DistanceMeasure dm = new EuclideanDistance();
+
+        //initialize sum of squared errors evaluation
         ClusterEvaluation sse = new SumOfSquaredErrors();
-        ClusterEvaluation tsm = new TraceScatterMatrix();
-        ClusterEvaluation aps = new SumOfAveragePairwiseSimilarities();
 
+        //initialize AICScore evaluation
+        ClusterEvaluation aic = new AICScore();
+
+        //initialize Gamma evaluation using EuclideanDistance
+        ClusterEvaluation gamma = new Gamma(dm);
+
+        //initialize CIndex evaluation using EuclideanDistance
+        ClusterEvaluation cindex = new CIndex(dm);
+
+        //calculate all the scores
         double sseScore = sse.score(clusters);
-        double tsmScore = tsm.score(clusters);
-        double apsScore = aps.score(clusters);
+        double aicScore = aic.score(clusters);
+        double gammaScore = gamma.score(clusters);
+        double cindexScore = cindex.score(clusters);
 
+        //print out all scores
         System.out.println("Clusterer SumOfSquaredErrors score: " + sseScore);
-        System.out.println("Clusterer TraceScatterMatrix score: " + tsmScore);
-        System.out.println("Clusterer SumOfAveragePairwiseSimilarities score: " + apsScore);
+        System.out.println("Clusterer AICScore score: " + aicScore);
+        System.out.println("Clusterer Gamma score: " + gammaScore);
+        System.out.println("Clusterer CIndex score: " + cindexScore);
 
     }
 
